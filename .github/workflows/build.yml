@@ -1,0 +1,37 @@
+name: build-pico
+
+on:
+  push:               # every new commit
+  workflow_dispatch:  # manual "Run workflow" button
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1) get the repository
+    - uses: actions/checkout@v4
+
+    # 2) install toolchain
+    - name: Install ARM GCC, CMake, Ninja
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-arm-none-eabi cmake ninja-build
+
+    # 3) configure & build (host tools disabled)
+    - name: Configure
+      run: |
+        mkdir build
+        cd build
+        cmake .. -G Ninja -DPICO_SDK_PATH=pico-sdk -DPICO_DISABLE_HOST_TOOLS=1
+    - name: Build firmware
+      run: |
+        cd build
+        ninja rp2040_usb
+
+    # 4) upload UF2
+    - name: Upload uf2
+      uses: actions/upload-artifact@v4
+      with:
+        name: rp2040_usb.uf2
+        path: build/rp2040_usb.uf2
